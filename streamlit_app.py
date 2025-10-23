@@ -38,12 +38,6 @@ def int_uniform_prob_ge(lo: int, hi: int, threshold: int):
         return 0.0
     return (hi - threshold + 1) / (hi - lo + 1)
 
-def run_button(label: str, key: str) -> bool:
-    pressed = st.button(label, key=key, type="primary")
-    if pressed:
-        st.session_state[key] = True
-    return st.session_state.get(key, False)
-
 # -------------------------------
 # サイドバー（共通設定）
 # -------------------------------
@@ -72,19 +66,19 @@ with tab1:
     st.subheader("問1：10回コインを投げた“表の回数”の分布（人数を増やす）")
     col_a, col_b = st.columns([1,2])
     with col_a:
-        n = st.number_input("1人あたりの試行回数（回）", 1, 200, 10)
-        p = st.slider("表の出る確率 p", 0.0, 1.0, 0.5, 0.01)
-        people_choices = [1, 10, 50, 100]
-        people_list = st.multiselect("人数の候補（複数選択可）", options=people_choices, default=[10, 50, 100])
-        show_theory = st.checkbox("理論（二項分布）を重ねて表示", value=True)
-        st.caption("横軸：表の回数（0〜n）／縦軸：その回数が出た人数")
-
-        ready = run_button("実行（問1）", key="run_q1")
+        with st.form("q1_form"):
+            n = st.number_input("1人あたりの試行回数（回）", 1, 200, 10)
+            p = st.slider("表の出る確率 p", 0.0, 1.0, 0.5, 0.01)
+            people_choices = [1, 10, 50, 100]
+            people_list = st.multiselect("人数の候補（複数選択可）", options=people_choices, default=[10, 50, 100])
+            show_theory = st.checkbox("理論（二項分布）を重ねて表示", value=True)
+            st.caption("横軸：表の回数（0〜n）／縦軸：その回数が出た人数")
+            submitted_q1 = st.form_submit_button("実行（問1）", type="primary")
 
     with col_b:
-        if not people_list:
+        if not people_list and submitted_q1:
             st.info("人数の候補を少なくとも1つ選んでください。")
-        elif ready:
+        elif submitted_q1:
             k_vals, pmf = binom_pmf(n, p)
             layers = []
             for people in people_list:
@@ -137,13 +131,14 @@ with tab2:
     st.subheader("問2：サイコロの各目の“割合”（試行回数の影響）")
     col_a, col_b = st.columns([1,2])
     with col_a:
-        dice_trials = st.number_input("サイコロを振る回数（1セット）", 1, 100000, 1000, step=10)
-        show_ratio = st.radio("表示（回数 or 割合）", ["割合", "回数"], index=0)
-        st.caption("横軸：出目（1〜6）／縦軸：出目の出た割合（または回数）")
-        ready = run_button("実行（問2）", key="run_q2")
+        with st.form("q2_form"):
+            dice_trials = st.number_input("サイコロを振る回数（1セット）", 1, 100000, 1000, step=10)
+            show_ratio = st.radio("表示（回数 or 割合）", ["割合", "回数"], index=0)
+            st.caption("横軸：出目（1〜6）／縦軸：出目の出た割合（または回数）")
+            submitted_q2 = st.form_submit_button("実行（問2）", type="primary")
 
     with col_b:
-        if ready:
+        if submitted_q2:
             counts_accum = np.zeros(6, dtype=float)
             for _ in range(sim_repeats):
                 rolls = rng.integers(1, 7, size=dice_trials)
@@ -191,17 +186,18 @@ with tab3:
     st.subheader("問3：RPG（命中率×ダメージ）で敵を倒せる確率")
     col_a, col_b = st.columns([1,2])
     with col_a:
-        hit_p = st.slider("命中率（%）", 0.0, 100.0, 65.0, 0.5)
-        dmg_lo = st.number_input("ダメージ下限（整数）", 0, 9999, 90)
-        dmg_hi = st.number_input("ダメージ上限（整数）", 0, 9999, 99)
-        hp = st.number_input("敵のHP（整数）", 1, 99999, 95)
-        sims = st.number_input("戦闘を繰り返す回数（1セット）", 1, 1000000, 1000, step=100)
-        show_converge = st.checkbox("収束のようす（累積推定）も表示", value=True)
-        st.caption("倒せる条件：攻撃が命中 かつ ダメージ≥HP（ダメージは整数一様）")
-        ready = run_button("実行（問3）", key="run_q3")
+        with st.form("q3_form"):
+            hit_p = st.slider("命中率（%）", 0.0, 100.0, 65.0, 0.5)
+            dmg_lo = st.number_input("ダメージ下限（整数）", 0, 9999, 90)
+            dmg_hi = st.number_input("ダメージ上限（整数）", 0, 9999, 99)
+            hp = st.number_input("敵のHP（整数）", 1, 99999, 95)
+            sims = st.number_input("戦闘を繰り返す回数（1セット）", 1, 1000000, 1000, step=100)
+            show_converge = st.checkbox("収束のようす（累積推定）も表示", value=True)
+            st.caption("倒せる条件：攻撃が命中 かつ ダメージ≥HP（ダメージは整数一様）")
+            submitted_q3 = st.form_submit_button("実行（問3）", type="primary")
 
     with col_b:
-        if ready:
+        if submitted_q3:
             p_hit = hit_p / 100.0
             p_dmg = int_uniform_prob_ge(int(dmg_lo), int(dmg_hi), int(hp))
             p_theory = p_hit * p_dmg
@@ -259,17 +255,18 @@ with tab4:
     st.subheader("問4：ガチャで“1回以上当たる”確率")
     col_a, col_b = st.columns([1,2])
     with col_a:
-        p_ssr = st.slider("1回あたりの当選確率（%）", 0.0, 100.0, 1.0, 0.1)
-        max_n = st.slider("横軸の上限（引く回数 n の最大値）", 1, 1000, 200, step=10,
-                          help="グラフの横軸上限です。1〜この値までの回数 n を描画します。")
-        show_sim = st.checkbox("シミュレーション（実測線）も重ねる", value=True)
-        n_for_point = st.number_input("指定回数 n での当選確率（数値表示）", 1, 100000, 100, step=10,
-                                      help="ここで指定した n 回引いたときの“1回以上当たる確率”を数値で表示します。")
-        st.caption("理論：当たる確率 = 1 - (1-p)^n（pは1回あたりの当選確率）")
-        ready = run_button("実行（問4）", key="run_q4")
+        with st.form("q4_form"):
+            p_ssr = st.slider("1回あたりの当選確率（%）", 0.0, 100.0, 1.0, 0.1)
+            max_n = st.slider("横軸の上限（引く回数 n の最大値）", 1, 1000, 200, step=10,
+                              help="グラフの横軸上限です。1〜この値までの回数 n を描画します。")
+            show_sim = st.checkbox("シミュレーション（実測線）も重ねる", value=True)
+            n_for_point = st.number_input("指定回数 n での当選確率（数値表示）", 1, 100000, 100, step=10,
+                                          help="ここで指定した n 回引いたときの“1回以上当たる確率”を数値で表示します。")
+            st.caption("理論：当たる確率 = 1 - (1-p)^n（pは1回あたりの当選確率）")
+            submitted_q4 = st.form_submit_button("実行（問4）", type="primary")
 
     with col_b:
-        if ready:
+        if submitted_q4:
             p = p_ssr / 100.0
             n_axis = np.arange(1, max_n + 1)
             theory = 1 - (1 - p) ** n_axis
